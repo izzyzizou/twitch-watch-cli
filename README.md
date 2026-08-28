@@ -27,9 +27,9 @@ export TWITCH_ACCESS_TOKEN="your_access_token"
 ## Usage
 
 ```sh
-python3 twitch_watch.py                 # list live followed channels, pick one, watch (best quality)
-python3 twitch_watch.py -q 720p         # pick a specific streamlink quality
-python3 twitch_watch.py --list          # just print the list, don't prompt/launch
+python3 main.py                 # list live followed channels, pick one, watch (best quality)
+python3 main.py -q 720p         # pick a specific streamlink quality
+python3 main.py --list          # just print the list, don't prompt/launch
 ```
 
 ## Options
@@ -38,3 +38,14 @@ python3 twitch_watch.py --list          # just print the list, don't prompt/laun
 | ------------------- | --------------------------------------------- |
 | `-q, --quality`     | streamlink quality (default: `best`)          |
 | `--list`            | only list live channels, don't prompt/launch  |
+
+## Development
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pytest
+.venv/bin/ruff check main.py tests
+.venv/bin/mypy --strict main.py tests
+.venv/bin/basedpyright
+```
