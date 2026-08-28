@@ -1,0 +1,2 @@
+# The script itself is pure Python 3 standard library — nothing to install here.
+# streamlink is an external system dependency, not a pip requirement.
