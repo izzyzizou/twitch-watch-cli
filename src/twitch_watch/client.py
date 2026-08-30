@@ -6,11 +6,16 @@ import urllib.request
 from http.client import HTTPResponse
 from typing import TypeVar, cast
 
+from dotenv import load_dotenv
+
 from twitch_watch.models import ApiResponse, Stream, User
 
 API_BASE = "https://api.twitch.tv/helix"
 
 T = TypeVar("T")
+
+
+_ = load_dotenv()
 
 
 def get_env_or_exit(name: str) -> str:

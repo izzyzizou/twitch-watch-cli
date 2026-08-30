@@ -5,24 +5,37 @@ lets you pick one, and launches it in streamlink.
 
 ## Requirements
 
-- Python 3 (standard library only, no pip installs needed)
+- Python 3
 - [streamlink](https://streamlink.github.io/) installed and on your `PATH`
 
 ## Setup
 
+Copy the sample env file and fill in your credentials:
+
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
+pip install -r requirements.txt
 
-export TWITCH_CLIENT_ID="your_client_id"
-export TWITCH_ACCESS_TOKEN="your_access_token"
+cp .env.sample .env
+# edit .env and set TWITCH_CLIENT_ID and TWITCH_ACCESS_TOKEN
 ```
 
+Your `.env` should look like this:
+
+```sh
+TWITCH_CLIENT_ID=your_client_id
+TWITCH_ACCESS_TOKEN=your_access_token
+```
+
+They are loaded automatically via [python-dotenv](https://github.com/theskumar/python-dotenv).
 `TWITCH_USER_ID` is not needed — it is fetched automatically from your token.
 
-> Get a client ID and access token via the [Twitch Developer
-> Console](https://dev.twitch.tv/console/apps) and an
-> [OAuth token](https://twitchtokengenerator.com/).
+> Get an access token (and match it with the client ID it was issued to) from
+> [Twitch Token Generator](https://twitchtokengenerator.com/) — the generated
+> token page shows both the access token and its client ID — or register your
+> own app via the [Twitch Developer Console](https://dev.twitch.tv/console/apps).
+> When generating the token, select the `user:read:follows` scope.
 
 ## Usage
 
