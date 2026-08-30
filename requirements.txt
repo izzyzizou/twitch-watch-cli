@@ -1,2 +1,2 @@
-# The script itself is pure Python 3 standard library — nothing to install here.
+python-dotenv>=1.0
 # streamlink is an external system dependency, not a pip requirement.

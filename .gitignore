@@ -20,4 +20,4 @@ build/
 
 # Env
 .env
-.env.*
+!.env.sample
