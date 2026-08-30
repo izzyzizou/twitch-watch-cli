@@ -13,6 +13,11 @@ venv/
 .mypy_cache/
 .ruff_cache/
 
+# Build / packaging
+dist/
+build/
+*.egg-info/
+
 # Env
 .env
 .env.*
