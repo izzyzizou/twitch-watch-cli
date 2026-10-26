@@ -1,23 +1,8 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-venv/
+/target/
 
-# Tooling
 .idea/
 .vscode/
 .DS_Store
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 
-# Build / packaging
-dist/
-build/
-*.egg-info/
-
-# Env
 .env
 !.env.sample

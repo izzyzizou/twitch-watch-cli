@@ -1,2 +1,0 @@
-python-dotenv>=1.0
-# streamlink is an external system dependency, not a pip requirement.
