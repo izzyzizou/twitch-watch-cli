@@ -5,7 +5,7 @@ lets you pick one, and launches it in streamlink.
 
 ## Requirements
 
-- Python 3
+- [Rust](https://www.rust-lang.org/tools/install) (to build)
 - [streamlink](https://streamlink.github.io/) installed and on your `PATH`
 
 ## Setup
@@ -13,10 +13,6 @@ lets you pick one, and launches it in streamlink.
 Copy the sample env file and fill in your credentials:
 
 ```sh
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
 cp .env.sample .env
 # edit .env and set TWITCH_CLIENT_ID and TWITCH_ACCESS_TOKEN
 ```
@@ -28,7 +24,8 @@ TWITCH_CLIENT_ID=your_client_id
 TWITCH_ACCESS_TOKEN=your_access_token
 ```
 
-They are loaded automatically via [python-dotenv](https://github.com/theskumar/python-dotenv).
+They are loaded automatically from a `.env` file in the current directory (or any
+parent), or you can export them in your shell instead.
 `TWITCH_USER_ID` is not needed — it is fetched automatically from your token.
 
 > Get an access token (and match it with the client ID it was issued to) from
@@ -40,15 +37,15 @@ They are loaded automatically via [python-dotenv](https://github.com/theskumar/p
 ## Usage
 
 ```sh
-python3 -m twitch_watch                   # list live followed channels, pick one, watch (best quality)
-python3 -m twitch_watch -q 720p           # pick a specific streamlink quality
-python3 -m twitch_watch --list            # just print the list, don't prompt/launch
+cargo run --release                       # list live followed channels, pick one, watch (best quality)
+cargo run --release -- -q 720p            # pick a specific streamlink quality
+cargo run --release -- --list             # just print the list, don't prompt/launch
 ```
 
-Or install as a package and use the `twitch-watch` command:
+Or install the `twitch-watch` binary onto your `PATH`:
 
 ```sh
-pip install -e .
+cargo install --path .
 twitch-watch --list
 ```
 
@@ -62,10 +59,7 @@ twitch-watch --list
 ## Development
 
 ```sh
-python3 -m venv .venv
-.venv/bin/pip install -r requirements-dev.txt
-.venv/bin/pytest
-.venv/bin/ruff check src tests
-.venv/bin/mypy
-.venv/bin/basedpyright
+cargo test
+cargo clippy --all-targets -- -D warnings
+cargo fmt --check
 ```
