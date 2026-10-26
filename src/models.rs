@@ -26,8 +26,3 @@ pub struct Stream {
     #[serde(default)]
     pub viewer_count: u64,
 }
-
-#[derive(Debug, Deserialize)]
-pub struct User {
-    pub id: String,
-}

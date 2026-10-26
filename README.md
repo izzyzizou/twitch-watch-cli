@@ -8,57 +8,92 @@ lets you pick one, and launches it in streamlink.
 - [Rust](https://www.rust-lang.org/tools/install) 1.88+ (to build)
 - [streamlink](https://streamlink.github.io/) installed and on your `PATH`
 
-## Setup
-
-Copy the sample env file and fill in your credentials:
+## Install
 
 ```sh
-cp .env.sample .env
-# edit .env and set TWITCH_CLIENT_ID and TWITCH_ACCESS_TOKEN
+cargo install --path .
 ```
 
-Your `.env` should look like this:
+## Setup
+
+### 1. Register a Twitch app (once)
+
+In the [Twitch Developer Console](https://dev.twitch.tv/console/apps), click
+**Register Your Application** and fill in:
+
+- **Name**: anything unique, e.g. `twitch-watch-<your name>`
+- **OAuth Redirect URLs**: `http://localhost` (required by the form, not used)
+- **Category**: Application Integration
+- **Client Type**: **Public**. Sign-in only works with public clients.
+
+Copy the app's **Client ID**.
+
+### 2. Log in
+
+```sh
+twitch-watch login --client-id <your client id>
+```
+
+This opens the Twitch activation page and shows a code to confirm. Once you
+approve, the credentials are saved to `~/.config/twitch-watch/credentials.json`
+(readable only by you) and refreshed automatically when they expire. To log in
+again later, `twitch-watch login` is enough because the client ID is remembered.
+
+`twitch-watch logout` revokes the token and deletes the file.
+
+### Alternative: environment variables
+
+For CI or scripts, you can skip `login` and provide a token directly, either
+exported or in a `.env` file in the current directory (or a parent; see
+`.env.sample`):
 
 ```sh
 TWITCH_CLIENT_ID=your_client_id
 TWITCH_ACCESS_TOKEN=your_access_token
 ```
 
-They are loaded automatically from a `.env` file in the current directory (or any
-parent), or you can export them in your shell instead.
-`TWITCH_USER_ID` is not needed — it is fetched automatically from your token.
-
-> Get an access token (and match it with the client ID it was issued to) from
-> [Twitch Token Generator](https://twitchtokengenerator.com/) — the generated
-> token page shows both the access token and its client ID — or register your
-> own app via the [Twitch Developer Console](https://dev.twitch.tv/console/apps).
-> When generating the token, select the `user:read:follows` scope.
+The token needs the `user:read:follows` scope. When `TWITCH_ACCESS_TOKEN` is set
+it takes precedence over the saved login, and it is not refreshed automatically.
 
 ## Usage
 
 ```sh
-cargo run --release                       # list live followed channels, pick one, watch (best quality)
-cargo run --release -- -q 720p            # pick a specific streamlink quality
-cargo run --release -- --list             # just print the list, don't prompt/launch
+twitch-watch                  # pick from your live followed channels and watch
+twitch-watch shroud           # watch a channel directly (also @name or a twitch.tv URL)
+twitch-watch sh               # partial name: launches if one channel matches, else narrows the picker
+twitch-watch -q 720p          # pick a specific streamlink quality
+twitch-watch --list           # just print the list, don't prompt/launch
 ```
 
-Or install the `twitch-watch` binary onto your `PATH`:
-
-```sh
-cargo install --path .
-twitch-watch --list
-```
-
-## Options
-
-| Flag                | Description                                   |
-| ------------------- | --------------------------------------------- |
-| `-q, --quality`     | streamlink quality (default: `best`)          |
-| `--list`            | only list live channels, don't prompt/launch  |
-| `-V, --version`     | print version                                 |
+In a terminal, channels are shown in a picker: type to filter, arrow keys to
+move, Enter to watch, Esc to quit. When input or output is redirected, a
+numbered list and prompt are used instead.
 
 After launching, `twitch-watch` waits for streamlink and exits with its exit
 code, so failures (e.g. an unavailable quality) are visible to scripts.
+
+## Options
+
+| Flag / command      | Description                                              |
+| ------------------- | -------------------------------------------------------- |
+| `[CHANNEL]`         | channel to watch, or part of a name to narrow the list   |
+| `-q, --quality`     | streamlink quality (default: config `quality`, else `best`) |
+| `--list`            | only list live channels, don't prompt/launch             |
+| `login`             | sign in and save credentials (`--client-id <id>`)        |
+| `logout`            | revoke and delete the saved credentials                  |
+| `-V, --version`     | print version                                            |
+
+## Configuration
+
+Optional settings go in `~/.config/twitch-watch/config.toml`:
+
+```toml
+quality = "720p60"   # default streamlink quality; --quality overrides it
+```
+
+The directory is `$XDG_CONFIG_HOME/twitch-watch` if that variable is set
+(`%APPDATA%\twitch-watch` on Windows), and `TWITCH_WATCH_CONFIG_DIR` overrides
+it entirely.
 
 ## Development
 
@@ -67,3 +102,5 @@ cargo test
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 ```
+
+See [ROADMAP.md](ROADMAP.md) for planned improvements.
