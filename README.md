@@ -5,7 +5,7 @@ lets you pick one, and launches it in streamlink.
 
 ## Requirements
 
-- [Rust](https://www.rust-lang.org/tools/install) (to build)
+- [Rust](https://www.rust-lang.org/tools/install) 1.88+ (to build)
 - [streamlink](https://streamlink.github.io/) installed and on your `PATH`
 
 ## Setup
@@ -55,6 +55,10 @@ twitch-watch --list
 | ------------------- | --------------------------------------------- |
 | `-q, --quality`     | streamlink quality (default: `best`)          |
 | `--list`            | only list live channels, don't prompt/launch  |
+| `-V, --version`     | print version                                 |
+
+After launching, `twitch-watch` waits for streamlink and exits with its exit
+code, so failures (e.g. an unavailable quality) are visible to scripts.
 
 ## Development
 

@@ -1,23 +1,8 @@
-# Rust
 /target/
 
-# Leftover Python artifacts from the pre-Rust version
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-venv/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-build/
-dist/
-
-# Tooling
 .idea/
 .vscode/
 .DS_Store
 
-# Env
 .env
 !.env.sample

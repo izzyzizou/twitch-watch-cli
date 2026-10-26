@@ -2,6 +2,7 @@ mod common;
 
 use std::cell::RefCell;
 use std::io::Cursor;
+use std::process::ExitCode;
 
 use clap::Parser;
 
@@ -10,7 +11,7 @@ use twitch_watch::cli::{self, Args};
 use twitch_watch::client::Client;
 
 struct Outcome {
-    result: anyhow::Result<()>,
+    result: anyhow::Result<ExitCode>,
     out: String,
     launches: Vec<(String, String)>,
 }
@@ -30,7 +31,7 @@ fn run_with(argv: &[&str], streams: Vec<serde_json::Value>, input: &str) -> Outc
             launches
                 .borrow_mut()
                 .push((url.to_owned(), quality.to_owned()));
-            Ok(())
+            Ok(ExitCode::from(7))
         },
     );
     Outcome {
@@ -69,7 +70,8 @@ fn list_flag_does_not_prompt() {
 #[test]
 fn launches_streamlink() {
     let outcome = run_with(&["twitch-watch", "-q", "720p"], two_streams(), "1\n");
-    outcome.result.unwrap();
+    // The launcher's exit code is passed through.
+    assert_eq!(outcome.result.unwrap(), ExitCode::from(7));
     assert_eq!(
         outcome.launches,
         [("https://twitch.tv/bob".to_owned(), "720p".to_owned())]
@@ -109,9 +111,32 @@ fn long_multibyte_title_is_truncated_by_chars() {
 }
 
 #[test]
-fn streamlink_not_found() {
-    // SAFETY: no other test in this binary spawns processes or reads PATH.
-    unsafe { std::env::set_var("PATH", "") };
-    let error = cli::launch_streamlink("https://twitch.tv/bob", "best").unwrap_err();
-    assert!(error.to_string().contains("streamlink not found"));
+fn title_control_characters_are_stripped() {
+    let streams = vec![stream_json_with("dave", 1, "Game", "hi\u{1b}[2Jthere")];
+    let outcome = run_with(&["twitch-watch", "--list"], streams, "");
+    outcome.result.unwrap();
+    assert!(!outcome.out.contains('\u{1b}'));
+    assert!(outcome.out.contains("\"hi[2Jthere\""));
+}
+
+#[test]
+fn launch_reports_missing_program() {
+    let error = cli::launch("twitch-watch-no-such-program", "url", "best").unwrap_err();
+    assert_eq!(
+        error.to_string(),
+        "twitch-watch-no-such-program not found. Make sure it's installed and on your PATH."
+    );
+}
+
+#[test]
+fn launch_passes_through_exit_code() {
+    // `true`/`false` ignore their arguments.
+    assert_eq!(
+        cli::launch("true", "url", "best").unwrap(),
+        ExitCode::SUCCESS
+    );
+    assert_eq!(
+        cli::launch("false", "url", "best").unwrap(),
+        ExitCode::FAILURE
+    );
 }

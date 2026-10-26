@@ -4,28 +4,10 @@ use mockito::Matcher;
 use serde_json::{Value, json};
 
 use common::stream_json;
-use twitch_watch::client::{Client, require_env};
+use twitch_watch::client::Client;
 
 fn client_for(server: &mockito::ServerGuard) -> Client {
     Client::with_base_url(server.url(), "cid", "tok")
-}
-
-#[test]
-fn require_env_returns_value() {
-    // SAFETY: each env test uses its own variable name.
-    unsafe { std::env::set_var("TW_TEST_PRESENT", "abc") };
-    assert_eq!(require_env("TW_TEST_PRESENT").unwrap(), "abc");
-}
-
-#[test]
-fn require_env_missing_errors() {
-    unsafe { std::env::remove_var("TW_TEST_MISSING") };
-    let error = require_env("TW_TEST_MISSING").unwrap_err();
-    assert!(
-        error
-            .to_string()
-            .contains("Missing required environment variable")
-    );
 }
 
 #[test]
@@ -114,4 +96,35 @@ fn live_followed_sorts_by_viewers() {
     let streams = client_for(&server).live_followed("u").unwrap();
     let logins: Vec<_> = streams.iter().map(|s| s.user_login.as_str()).collect();
     assert_eq!(logins, ["high", "low"]);
+}
+
+#[test]
+fn get_explains_unauthorized() {
+    let mut server = mockito::Server::new();
+    server
+        .mock("GET", "/users")
+        .with_status(401)
+        .with_body(r#"{"message": "Invalid OAuth token"}"#)
+        .create();
+
+    let error = client_for(&server).own_user_id().unwrap_err().to_string();
+    assert!(error.starts_with("API error 401"));
+    assert!(error.contains("invalid or expired"));
+}
+
+#[test]
+fn get_all_pages_stops_on_repeated_cursor() {
+    let mut server = mockito::Server::new();
+    let mock = server
+        .mock("GET", "/streams/followed")
+        .match_query(Matcher::Any)
+        .with_body(r#"{"data": [{"n": 1}], "pagination": {"cursor": "same"}}"#)
+        .expect(2)
+        .create();
+
+    let result: Vec<Value> = client_for(&server)
+        .get_all_pages("/streams/followed", &[])
+        .unwrap();
+    assert_eq!(result.len(), 2);
+    mock.assert();
 }
