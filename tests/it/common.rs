@@ -1,10 +1,10 @@
-#![allow(dead_code)]
+//! Fixtures shared by the integration tests.
 
 use mockito::{Matcher, Mock, ServerGuard};
 use serde_json::{Value, json};
 
-use twitch_watch::auth::Credentials;
-use twitch_watch::client::{Client, Endpoints};
+use twitch_watch::credentials::Credentials;
+use twitch_watch::twitch::{Client, Endpoints};
 
 pub fn stream_json(login: &str, viewers: u64) -> Value {
     stream_json_with(login, viewers, "Game", "Some title")
@@ -29,7 +29,7 @@ pub fn stream_json_with(login: &str, viewers: u64, game: &str, title: &str) -> V
     })
 }
 
-pub fn credentials(token: &str) -> Credentials {
+pub fn creds(token: &str) -> Credentials {
     Credentials {
         client_id: "cid".to_owned(),
         access_token: token.to_owned(),
@@ -38,7 +38,7 @@ pub fn credentials(token: &str) -> Credentials {
 }
 
 pub fn client_for(server: &ServerGuard) -> Client {
-    Client::new(Endpoints::at(&server.url()), credentials("tok"), None)
+    Client::new(Endpoints::at(&server.url()), creds("tok"), None)
 }
 
 pub fn validation_json(client_id: &str, scopes: &[&str]) -> String {
@@ -63,7 +63,7 @@ pub fn mock_validate(server: &mut ServerGuard, token: &str) -> Mock {
 
 /// Starts a mock Twitch that validates token `tok` as user `user-1`, who
 /// follows the given live `streams`.
-pub fn mock_api(streams: Vec<Value>) -> ServerGuard {
+pub fn mock_api(streams: &[Value]) -> ServerGuard {
     let mut server = mockito::Server::new();
     mock_validate(&mut server, "tok");
     server

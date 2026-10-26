@@ -65,9 +65,12 @@ twitch-watch -q 720p          # pick a specific streamlink quality
 twitch-watch --list           # just print the list, don't prompt/launch
 ```
 
-In a terminal, channels are shown in a picker: type to filter, arrow keys to
-move, Enter to watch, Esc to quit. When input or output is redirected, a
-numbered list and prompt are used instead.
+In a terminal, channels are shown in a picker: type to filter, arrow keys (or
+Tab) to move, Enter to watch, Esc to quit. The filter matches each typed word
+against channel names and games (not titles), case-insensitively. Names
+starting with what you typed come first, then names containing it, then game
+matches. When input or output is redirected, a numbered list and prompt are
+used instead.
 
 After launching, `twitch-watch` waits for streamlink and exits with its exit
 code, so failures (e.g. an unavailable quality) are visible to scripts.
@@ -99,8 +102,22 @@ it entirely.
 
 ```sh
 cargo test
-cargo clippy --all-targets -- -D warnings
+cargo clippy --all-targets -- -D warnings   # pedantic lints are enabled in Cargo.toml
 cargo fmt --check
 ```
+
+Layout:
+
+| Path               | Responsibility                                          |
+| ------------------ | ------------------------------------------------------- |
+| `src/main.rs`      | process setup, dispatch, exit codes                     |
+| `src/cli.rs`       | command-line definitions                                |
+| `src/commands/`    | `watch`, `login`/`logout` logic                         |
+| `src/twitch/`      | Helix client, OAuth requests, response models           |
+| `src/credentials.rs`, `src/config.rs` | on-disk state                        |
+| `src/matching.rs`  | channel-argument and picker filtering rules             |
+| `src/ui/`          | numbered list/prompt and interactive picker             |
+| `src/streamlink.rs`| launching streamlink, Ctrl-C handling                   |
+| `tests/it/`        | integration tests (one binary; modules mirror `src/`)   |
 
 See [ROADMAP.md](ROADMAP.md) for planned improvements.

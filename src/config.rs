@@ -11,6 +11,7 @@ use serde::Deserialize;
 pub const CONFIG_DIR_VAR: &str = "TWITCH_WATCH_CONFIG_DIR";
 
 /// Reads an environment variable, treating blank values as unset.
+#[must_use]
 pub fn env_var(name: &str) -> Option<String> {
     let value = std::env::var(name).ok()?;
     let value = value.trim();
@@ -43,6 +44,7 @@ pub struct Paths {
 }
 
 impl Paths {
+    #[must_use]
     pub fn in_dir(dir: &Path) -> Self {
         Self {
             config: dir.join("config.toml"),

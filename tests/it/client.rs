@@ -1,11 +1,9 @@
-mod common;
-
 use mockito::Matcher;
 use serde_json::{Value, json};
 
-use common::{client_for, credentials, mock_validate, stream_json, validation_json};
-use twitch_watch::auth::Credentials;
-use twitch_watch::client::{Client, Endpoints};
+use crate::common::{client_for, creds, mock_validate, stream_json, validation_json};
+use twitch_watch::credentials::Credentials;
+use twitch_watch::twitch::{Client, Endpoints};
 
 #[test]
 fn get_parses_json_and_sends_query_and_headers() {
@@ -169,7 +167,7 @@ fn expired_token_is_refreshed_retried_and_saved() {
 
     let dir = tempfile::tempdir().unwrap();
     let store = dir.path().join("credentials.json");
-    let mut old = credentials("old");
+    let mut old = creds("old");
     old.refresh_token = Some("r1".to_owned());
     let client = Client::new(Endpoints::at(&server.url()), old, Some(store.clone()));
 
@@ -193,7 +191,7 @@ fn failed_refresh_asks_to_log_in_again() {
         .with_body(r#"{"message": "Invalid refresh token"}"#)
         .create();
 
-    let mut expired = credentials("old");
+    let mut expired = creds("old");
     expired.refresh_token = Some("r1".to_owned());
     let client = Client::new(Endpoints::at(&server.url()), expired, None);
     let error = client.validate().unwrap_err();
