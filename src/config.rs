@@ -1,5 +1,7 @@
-//! Locating the config directory and reading `config.toml`.
+//! Environment and `.env` lookup, locating the config directory, and reading
+//! `config.toml`.
 
+use std::collections::HashMap;
 use std::fs::{self, DirBuilder};
 use std::io;
 use std::path::{Path, PathBuf};
@@ -10,12 +12,54 @@ use serde::Deserialize;
 /// Overrides the config directory (also used by the tests).
 pub const CONFIG_DIR_VAR: &str = "TWITCH_WATCH_CONFIG_DIR";
 
-/// Reads an environment variable, treating blank values as unset.
+/// The only variables read from a `.env` file.
+const DOTENV_KEYS: [&str; 2] = ["TWITCH_CLIENT_ID", "TWITCH_ACCESS_TOKEN"];
+
+/// Reads a process environment variable, treating blank values as unset.
 #[must_use]
 pub fn env_var(name: &str) -> Option<String> {
-    let value = std::env::var(name).ok()?;
+    non_blank(&std::env::var(name).ok()?)
+}
+
+fn non_blank(value: &str) -> Option<String> {
     let value = value.trim();
     (!value.is_empty()).then(|| value.to_owned())
+}
+
+/// Credential variables from the process environment, falling back to a
+/// `.env` file in the current directory or a parent.
+///
+/// Only [`DOTENV_KEYS`] are taken from `.env`, and nothing is exported to the
+/// process environment. Otherwise a `.env` in an untrusted directory could
+/// redirect where credentials are saved, or inject variables such as
+/// `PYTHONPATH` into streamlink.
+#[derive(Debug, Default)]
+pub struct Env {
+    dotenv: HashMap<String, String>,
+}
+
+impl Env {
+    pub fn load() -> Result<Self> {
+        let entries = match dotenvy::dotenv_iter() {
+            Ok(entries) => entries,
+            Err(error) if error.not_found() => return Ok(Self::default()),
+            Err(error) => return Err(error).context("failed to load .env"),
+        };
+        let mut dotenv = HashMap::new();
+        for entry in entries {
+            let (key, value) = entry.context("failed to load .env")?;
+            if DOTENV_KEYS.contains(&key.as_str()) {
+                dotenv.insert(key, value);
+            }
+        }
+        Ok(Self { dotenv })
+    }
+
+    /// Looks up a credential variable; blank values count as unset.
+    #[must_use]
+    pub fn var(&self, name: &str) -> Option<String> {
+        env_var(name).or_else(|| self.dotenv.get(name).and_then(|value| non_blank(value)))
+    }
 }
 
 /// `$TWITCH_WATCH_CONFIG_DIR`, else `$XDG_CONFIG_HOME/twitch-watch`, else

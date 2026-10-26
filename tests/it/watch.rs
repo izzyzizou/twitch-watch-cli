@@ -233,3 +233,14 @@ fn out_of_range_pick_is_an_error_not_a_panic() {
     assert!(outcome.result.is_err());
     assert_eq!(outcome.urls(), NO_URLS);
 }
+
+#[test]
+fn name_and_game_control_characters_are_stripped() {
+    let mut stream = stream_json_with("eve", 1, "Ga\u{1b}]0;pwned\u{7}me", "");
+    stream["user_name"] = "E\u{1b}[31mve".into();
+    let outcome = run_with_picker(&listing(), &[stream], never_pick);
+    outcome.result.as_ref().unwrap();
+    assert!(!outcome.out.contains('\u{1b}'));
+    assert!(!outcome.out.contains('\u{7}'));
+    assert!(outcome.out.contains("[1] E[31mve  (Ga]0;pwnedme)"));
+}

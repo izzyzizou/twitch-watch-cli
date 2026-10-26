@@ -6,7 +6,7 @@ use std::io::{self, Write};
 use anyhow::{Context, Result};
 use console::{Key, Term, style, truncate_str};
 
-use super::{clean_title, summary};
+use super::{sanitize, summary};
 use crate::matching;
 use crate::twitch::models::Stream;
 
@@ -14,7 +14,7 @@ const ROWS: usize = 15;
 const TITLE_MAX_CHARS: usize = 60;
 
 fn label(stream: &Stream) -> String {
-    let title = clean_title(&stream.title, TITLE_MAX_CHARS);
+    let title = sanitize(&stream.title, TITLE_MAX_CHARS);
     if title.is_empty() {
         summary(stream)
     } else {

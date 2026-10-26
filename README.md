@@ -54,6 +54,7 @@ TWITCH_ACCESS_TOKEN=your_access_token
 
 The token needs the `user:read:follows` scope. When `TWITCH_ACCESS_TOKEN` is set
 it takes precedence over the saved login, and it is not refreshed automatically.
+Only these two variables are read from `.env`; anything else in it is ignored.
 
 ## Usage
 
@@ -120,4 +121,5 @@ Layout:
 | `src/streamlink.rs`| launching streamlink, Ctrl-C handling                   |
 | `tests/it/`        | integration tests (one binary; modules mirror `src/`)   |
 
-See [ROADMAP.md](ROADMAP.md) for planned improvements.
+See [ROADMAP.md](ROADMAP.md) for planned improvements and [SECURITY.md](SECURITY.md)
+for reporting vulnerabilities.

@@ -77,8 +77,13 @@ pub fn logout(endpoints: &Endpoints, store: &Path, out: &mut impl Write) -> Resu
     Ok(())
 }
 
-/// Best-effort: opens `url` in the default browser.
+/// Best-effort: opens `url` in the default browser. Only `https://` URLs are
+/// opened, since the URL comes from a network response and is handed to a
+/// system opener.
 pub fn open_in_browser(url: &str) {
+    if !url.starts_with("https://") {
+        return;
+    }
     let program = if cfg!(target_os = "macos") {
         "open"
     } else if cfg!(windows) {

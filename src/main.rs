@@ -7,7 +7,7 @@ use clap::Parser;
 use twitch_watch::cli::{Args, Cmd};
 use twitch_watch::commands::session;
 use twitch_watch::commands::watch::{self, WatchOptions};
-use twitch_watch::config::{self, Config, Paths};
+use twitch_watch::config::{self, Config, Env, Paths};
 use twitch_watch::credentials::{self, Credentials};
 use twitch_watch::streamlink;
 use twitch_watch::twitch::{Client, Endpoints};
@@ -28,11 +28,12 @@ fn main() -> ExitCode {
 }
 
 fn try_main(args: &Args) -> Result<ExitCode> {
-    load_dotenv()?;
+    let env = Env::load()?;
     streamlink::install_interrupt_handler()?;
+    // The config location comes from the real environment only, never `.env`.
     let paths = Paths::in_dir(&config::dir(config::env_var)?);
     match &args.command {
-        Some(Cmd::Login { client_id }) => login(client_id.as_deref(), &paths),
+        Some(Cmd::Login { client_id }) => login(client_id.as_deref(), &env, &paths),
         Some(Cmd::Logout) => {
             session::logout(
                 &Endpoints::twitch(),
@@ -41,14 +42,14 @@ fn try_main(args: &Args) -> Result<ExitCode> {
             )?;
             Ok(ExitCode::SUCCESS)
         }
-        None => watch(args, &paths),
+        None => watch(args, &env, &paths),
     }
 }
 
-fn login(client_id: Option<&str>, paths: &Paths) -> Result<ExitCode> {
+fn login(client_id: Option<&str>, env: &Env, paths: &Paths) -> Result<ExitCode> {
     let client_id = client_id
         .map(str::to_owned)
-        .or_else(|| config::env_var("TWITCH_CLIENT_ID"))
+        .or_else(|| env.var("TWITCH_CLIENT_ID"))
         .or_else(|| {
             Credentials::load(&paths.credentials)
                 .ok()
@@ -70,7 +71,7 @@ fn login(client_id: Option<&str>, paths: &Paths) -> Result<ExitCode> {
             }
         },
     )?;
-    if config::env_var("TWITCH_ACCESS_TOKEN").is_some() {
+    if env.var("TWITCH_ACCESS_TOKEN").is_some() {
         eprintln!(
             "Note: TWITCH_ACCESS_TOKEN is set (in your environment or .env) and takes precedence over this login."
         );
@@ -78,9 +79,9 @@ fn login(client_id: Option<&str>, paths: &Paths) -> Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-fn watch(args: &Args, paths: &Paths) -> Result<ExitCode> {
+fn watch(args: &Args, env: &Env, paths: &Paths) -> Result<ExitCode> {
     let config = Config::load(&paths.config)?;
-    let (credentials, store) = credentials::resolve(config::env_var, &paths.credentials)?;
+    let (credentials, store) = credentials::resolve(|name| env.var(name), &paths.credentials)?;
     let client = Client::new(Endpoints::twitch(), credentials, store);
     let quality = args
         .quality
@@ -104,14 +105,6 @@ fn watch(args: &Args, paths: &Paths) -> Result<ExitCode> {
     } else {
         let numbered = list::numbered_picker(io::stdin().lock());
         watch::run(&options, &client, &mut stdout, numbered, streamlink::watch)
-    }
-}
-
-fn load_dotenv() -> Result<()> {
-    match dotenvy::dotenv() {
-        Ok(_) => Ok(()),
-        Err(error) if error.not_found() => Ok(()),
-        Err(error) => Err(error).context("failed to load .env"),
     }
 }
 

@@ -94,3 +94,38 @@ fn version_flag() {
         format!("twitch-watch {}", env!("CARGO_PKG_VERSION"))
     );
 }
+
+#[test]
+fn dotenv_supplies_credentials() {
+    let dir = scratch_dir("dotenv-creds");
+    std::fs::write(dir.join(".env"), "TWITCH_ACCESS_TOKEN=tok\n").unwrap();
+    let output = run_in(&dir, &[], &[]);
+    // The token was read from .env, so the missing client ID is what's reported.
+    assert!(stderr(&output).contains("TWITCH_CLIENT_ID must be set"));
+}
+
+#[test]
+fn dotenv_cannot_redirect_the_config_dir() {
+    let dir = scratch_dir("dotenv-redirect");
+    let evil = dir.join("evil");
+    std::fs::create_dir_all(&evil).unwrap();
+    std::fs::write(evil.join("config.toml"), "not valid toml [").unwrap();
+    std::fs::write(
+        dir.join(".env"),
+        format!("TWITCH_WATCH_CONFIG_DIR={}\n", evil.display()),
+    )
+    .unwrap();
+    // `run_in` sets TWITCH_WATCH_CONFIG_DIR itself, so clear it to let .env try.
+    let output = Command::new(env!("CARGO_BIN_EXE_twitch-watch"))
+        .current_dir(&dir)
+        .env_clear()
+        .env("HOME", dir.join("home"))
+        .output()
+        .unwrap();
+    // Had .env been honoured, the broken config.toml would have been loaded.
+    assert!(
+        stderr(&output).starts_with("Not logged in."),
+        "{}",
+        stderr(&output)
+    );
+}

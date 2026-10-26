@@ -4,7 +4,7 @@ use std::io::{self, BufRead, Write};
 
 use anyhow::{Result, bail};
 
-use super::{clean_title, summary};
+use super::{sanitize, summary};
 use crate::twitch::models::Stream;
 
 const TITLE_MAX_CHARS: usize = 80;
@@ -13,7 +13,7 @@ pub fn print_streams(out: &mut dyn Write, streams: &[&Stream]) -> io::Result<()>
     writeln!(out, "\nLive now:\n")?;
     for (i, stream) in streams.iter().enumerate() {
         writeln!(out, "  [{}] {}", i + 1, summary(stream))?;
-        let title = clean_title(&stream.title, TITLE_MAX_CHARS);
+        let title = sanitize(&stream.title, TITLE_MAX_CHARS);
         if !title.is_empty() {
             writeln!(out, "        \"{title}\"")?;
         }
